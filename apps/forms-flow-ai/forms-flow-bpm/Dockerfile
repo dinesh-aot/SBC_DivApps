@@ -33,7 +33,14 @@ FROM artifacts.developer.gov.bc.ca/docker-remote/adoptopenjdk/openjdk11:jdk-11.0
 ENV JAVA_VERSION jdk-11.0.3+7
 ENV JAVA_HOME=/opt/java/openjdk \
     PATH="/opt/java/openjdk/bin:$PATH"
-
+# COPY keycloak-cacert
+COPY keycloak-cert/sslcom.crt /tmp/sslcom.crt
+RUN keytool -import -trustcacerts \
+    -alias sslcom-cert \
+    -file /tmp/sslcom.crt \
+    -keystore /opt/java/openjdk/lib/security/cacerts \
+    -storepass changeit \
+    -noprompt
 EXPOSE 8080
 # OpenShift has /app in the image, but it's missing when doing local development - Create it when missing
 RUN test ! -d /app && mkdir /app || :
