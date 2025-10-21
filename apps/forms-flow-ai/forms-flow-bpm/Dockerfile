@@ -3,6 +3,11 @@
 # Maven build
 FROM artifacts.developer.gov.bc.ca/docker-remote/maven:3.6.1-jdk-11-slim AS MAVEN_TOOL_CHAIN
 
+RUN sed -i \
+  -e 's|deb.debian.org/debian|archive.debian.org/debian|g' \
+  -e 's|security.debian.org/debian-security|archive.debian.org/debian-security|g' \
+  /etc/apt/sources.list
+
 RUN apt-get update \
     && apt-get install -y git
 
@@ -41,6 +46,23 @@ RUN keytool -import -trustcacerts \
     -keystore /opt/java/openjdk/lib/security/cacerts \
     -storepass changeit \
     -noprompt
+
+COPY ca-certs/entrust-intermediate.crt /tmp/entrust-intermediate.crt
+RUN keytool -import -trustcacerts \
+    -alias entrust-intermediate-cert \
+    -file /tmp/entrust-intermediate.crt \
+    -keystore /opt/java/openjdk/lib/security/cacerts \
+    -storepass changeit \
+    -noprompt
+
+COPY ca-certs/sectigo-root.crt /tmp/sectigo-root.crt
+RUN keytool -import -trustcacerts \
+    -alias sectigo-root-cert \
+    -file /tmp/sectigo-root.crt \
+    -keystore /opt/java/openjdk/lib/security/cacerts \
+    -storepass changeit \
+    -noprompt
+
 EXPOSE 8080
 # OpenShift has /app in the image, but it's missing when doing local development - Create it when missing
 RUN test ! -d /app && mkdir /app || :
